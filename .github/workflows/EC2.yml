@@ -1,44 +1,44 @@
-name: Entrega continua
+name: CD
 
-on:
-  workflow_call:
+on: workflow_call
 
 jobs:
-
   EC2:
     runs-on: ubuntu-latest
     steps:
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v3.0.0
-      with:
-    # Artifact name
-        name: programa
-    - uses: actions/checkout@v3
-    
-    - name: Deploy to Staging server
-      uses: easingthemes/ssh-deploy@main
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-        REMOTE_USER: ${{ secrets.REMOTE_USER }}
-        TARGET: /home/${{ secrets.REMOTE_USER }}
-        EXCLUDE: "postgres-data"
-        
-    - name: executing remote ssh commands using password
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        script: |
-          export HOST=${{ secrets.DBHOST }}
-          export USER=${{ secrets.DBUSER }}
-          export PASSWORD=${{ secrets.DBPASSWORD }}
-          export DBNAME=${{ secrets.DBNAME }}
-          export DBPORT=${{ secrets.DBPORT }}
-          export PORT=8000
-          chmod +x main
-          nohup ./main > nohup.out 2> nohup.err < /dev/null &
-        
-        
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v6.0.0
+        with:
+          name: binary
+      - name: ssh deploy
+        uses: easingthemes/ssh-deploy@v5.1.0
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST:     ${{ secrets.SSH_REMOTE_HOST }}
+          REMOTE_USER:     ${{ secrets.SSH_REMOTE_USER }}
+          SOURCE:          '.'
+          TARGET:          /home/${{ secrets.SSH_REMOTE_USER }}
+          EXCLUDE:          './.github, ./postgres-data'
+      - name: SSH Remote Commands
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SSH_REMOTE_HOST }}
+          username: ${{ secrets.SSH_REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            export                                  \
+              HOST="${{ secrets.DB_HOST }}"         \
+              USER="${{ secrets.DB_USER }}"         \
+              PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              DBNAME="${{ secrets.DB_NAME }}"       \
+              DBPORT="${{ secrets.DB_PORT }}"       \
+              PORT=8000
+
+            echo $HOST $USER $PASSWORD $DBNAME $DBPORT $PORT
+
+            chmod +x ./main
+            nohup ./main > nohup.out 2> nohup.err < /dev/null &
+
