@@ -32,5 +32,9 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ghcr.io/xurlz/go_ci:${{github.ref_name}}
+        tags: |-
+          ghcr.io/xurlz/go_ci:${{ case(
+            github.event_name == 'pull_request', github.head_ref,
+            github.ref_name
+          ) }}
 
