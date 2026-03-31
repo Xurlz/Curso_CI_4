@@ -27,7 +27,7 @@ jobs:
           container-name: task-ci-cd-practice-app
           image: |-
             ghcr.io/xurlz/go_ci:${{ case(
-              github.event_name == 'pull_request', github.head_ref,
+              github.event_name == 'pull_request', format('{0}-{1}',github.head_ref,github.run_number),
               github.ref_name
             ) }}
           environment-variables: |
